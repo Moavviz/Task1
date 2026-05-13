@@ -1,0 +1,198 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score
+)
+
+# ---------- LOAD DATASET ----------
+print("Loading California Housing Dataset...\n")
+
+housing = fetch_california_housing(as_frame=True)
+
+# Create DataFrame
+df = pd.concat(
+    [housing.data, housing.target.rename("MedHouseVal")],
+    axis=1
+)
+
+# ---------- DISPLAY DATA ----------
+print("First 5 Rows:\n")
+print(df.head())
+
+print("\nDataset Shape:")
+print(df.shape)
+
+print("\nColumn Names:")
+print(df.columns)
+
+# ---------- CHECK MISSING VALUES ----------
+print("\nMissing Values:\n")
+print(df.isnull().sum())
+
+# ---------- BASIC INFORMATION ----------
+print("\nDataset Info:\n")
+print(df.info())
+
+# ---------- STATISTICAL SUMMARY ----------
+print("\nStatistical Summary:\n")
+print(df.describe())
+
+# ============================================
+# EXPLORATORY DATA ANALYSIS (EDA)
+# ============================================
+
+# ---------- HISTOGRAMS ----------
+df.hist(figsize=(15, 10))
+plt.suptitle("Feature Distributions")
+plt.show()
+
+# ---------- CORRELATION HEATMAP ----------
+plt.figure(figsize=(12, 8))
+sns.heatmap(df.corr(), annot=True, cmap="coolwarm")
+plt.title("Correlation Heatmap")
+plt.show()
+
+# ---------- SCATTER PLOT ----------
+plt.figure(figsize=(8, 6))
+plt.scatter(df["MedInc"], df["MedHouseVal"], alpha=0.4)
+plt.xlabel("Median Income")
+plt.ylabel("Median House Value")
+plt.title("Median Income vs House Value")
+plt.show()
+
+# ============================================
+# PREPARE DATA
+# ============================================
+
+# Features (X) and Target (y)
+X = df.drop("MedHouseVal", axis=1)
+y = df["MedHouseVal"]
+
+# ---------- TRAIN TEST SPLIT ----------
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+print("\nTraining Data Shape:", X_train.shape)
+print("Testing Data Shape:", X_test.shape)
+
+# ============================================
+# TRAIN LINEAR REGRESSION MODEL
+# ============================================
+
+print("\nTraining Linear Regression Model...\n")
+
+model = LinearRegression()
+
+# Train Model
+model.fit(X_train, y_train)
+
+# ---------- PREDICTIONS ----------
+y_pred = model.predict(X_test)
+
+# ============================================
+# MODEL EVALUATION
+# ============================================
+
+# MAE
+mae = mean_absolute_error(y_test, y_pred)
+
+# RMSE
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+# R2 Score
+r2 = r2_score(y_test, y_pred)
+
+print("========== MODEL EVALUATION ==========")
+print(f"Mean Absolute Error (MAE): {mae:.3f}")
+print(f"Root Mean Squared Error (RMSE): {rmse:.3f}")
+print(f"R² Score: {r2:.3f}")
+
+# ============================================
+# ACTUAL VS PREDICTED PLOT
+# ============================================
+
+plt.figure(figsize=(8, 6))
+
+plt.scatter(y_test, y_pred, alpha=0.4)
+
+plt.xlabel("Actual House Prices")
+plt.ylabel("Predicted House Prices")
+
+plt.title("Actual vs Predicted House Prices")
+
+# Perfect prediction line
+plt.plot(
+    [min(y_test), max(y_test)],
+    [min(y_test), max(y_test)],
+    color='red'
+)
+
+plt.show()
+
+# ============================================
+# RESIDUAL PLOT
+# ============================================
+
+residuals = y_test - y_pred
+
+plt.figure(figsize=(8, 6))
+
+plt.scatter(y_pred, residuals, alpha=0.4)
+
+plt.axhline(y=0, color='red')
+
+plt.xlabel("Predicted Values")
+plt.ylabel("Residuals")
+
+plt.title("Residual Plot")
+
+plt.show()
+
+# ============================================
+# FEATURE IMPORTANCE (COEFFICIENTS)
+# ============================================
+
+coefficients = pd.DataFrame({
+    "Feature": X.columns,
+    "Coefficient": model.coef_
+})
+
+print("\nFeature Coefficients:\n")
+print(coefficients)
+
+# ============================================
+# SAVE MODEL (OPTIONAL)
+# ============================================
+
+import pickle
+
+with open("linear_regression_house_price_model.pkl", "wb") as file:
+    pickle.dump(model, file)
+
+print("\nModel saved successfully as:")
+print("linear_regression_house_price_model.pkl")
+
+# ============================================
+# SAMPLE PREDICTION
+# ============================================
+
+sample_data = X_test.iloc[0:1]
+
+sample_prediction = model.predict(sample_data)
+
+print("\nSample Prediction:")
+print("Predicted House Price:", sample_prediction[0])
+
+print("\nProject Completed Successfully!")
